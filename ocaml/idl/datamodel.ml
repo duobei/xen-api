@@ -2189,6 +2189,12 @@ module Tunnel = struct
     Enum
       ("tunnel_protocol", [("gre", "GRE protocol"); ("vxlan", "VxLAN Protocol")])
 
+  let network_topology =
+    Enum
+      ( "network_topology"
+      , [("None", "Has no network topology"); ("Mesh", "Mesh network topology")]
+      )
+
   let create =
     call ~name:"create" ~doc:"Create a tunnel"
       ~versioned_params:
@@ -2215,14 +2221,13 @@ module Tunnel = struct
           ; param_default= Some (VEnum "gre")
           }
         ; {
-            param_type= Bool
-          ; param_name= "cross_server"
+            param_type= network_topology
+          ; param_name= "topology"
           ; param_doc=
-              "Cross_server used to indicate what scenario is the tunnel used \
-               in: cross_server is true for a cross-server private network, \
-               false for XCP-ng"
+              "Network topology used for the tunnel: None for XCP-ng, a \
+               cross-server private network has the mesh network topology"
           ; param_release= next_release
-          ; param_default= Some (VBool false)
+          ; param_default= Some (VEnum "None")
           }
         ]
       ~result:(Ref _tunnel, "The reference of the created tunnel object")
@@ -2290,17 +2295,11 @@ module Tunnel = struct
             "tunnel_id"
             "VXLAN network identifier of tunnel used in a cross-server private \
              network"
-        ; field ~qualifier:StaticRO ~ty:Bool ~default_value:(Some (VBool false))
-            ~lifecycle:
-              [
-                ( Published
-                , rel_next
-                , "Indicate what scenario is the tunnel used in (cross-server \
-                   private network or XCP-ng)"
-                )
-              ]
-            "cross_server"
-            "True for a cross-server private network, false for XCP-ng"
+        ; field ~ty:network_topology ~default_value:(Some (VEnum "None"))
+            ~lifecycle:[(Published, rel_next, "Network topology of tunnel")]
+            "topology"
+            "None for XCP-ng, a cross-server private network has the mesh \
+             network topology"
         ]
       ()
 end

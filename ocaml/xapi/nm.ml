@@ -831,9 +831,6 @@ let bring_pif_down ~__context ?(force = false) (pif : API.ref_PIF) =
           (* If last tunnel with VxLAN protocol is unplugged, close VxLAN UDP port *)
           let maybe_close_port () =
             let host = rc.API.pIF_host in
-            let cross_server =
-              Db.Tunnel.get_cross_server ~__context ~self:tunnel_ref
-            in
             match Db.Tunnel.get_protocol ~__context ~self:tunnel_ref with
             | `vxlan ->
                 let expr =
@@ -843,8 +840,8 @@ let bring_pif_down ~__context ?(force = false) (pif : API.ref_PIF) =
                         , Literal (Record_util.tunnel_protocol_to_string `vxlan)
                         )
                     , Eq
-                        ( Field "cross_server"
-                        , Literal (string_of_bool cross_server)
+                        ( Field "topology"
+                        , Literal (Record_util.tunnel_topology_to_string `None)
                         )
                     )
                 in

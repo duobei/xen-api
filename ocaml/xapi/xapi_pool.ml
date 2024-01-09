@@ -412,7 +412,7 @@ let pre_join_checks ~__context ~rpc ~session_id ~force =
   let assert_no_tunnels_on_me () =
     let tunnels =
       Db.Tunnel.get_refs_where ~__context
-        ~expr:(Eq (Field "cross_server", Literal "false"))
+        ~expr:(Eq (Field "topology", Literal "None"))
     in
     if tunnels <> [] then (
       error "The current host has tunnels: it cannot join a new pool" ;

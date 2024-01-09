@@ -6178,10 +6178,13 @@ let tunnel_create printer rpc session_id params =
     Record_util.tunnel_protocol_of_string
       (List.assoc_opt "protocol" params |> Option.value ~default:"gre")
   in
-  let cross_server = get_bool_param params "cross_server" in
+  let topology =
+    Record_util.tunnel_topology_of_string
+      (List.assoc_opt "topology" params |> Option.value ~default:"None")
+  in
   let tunnel =
     Client.Tunnel.create ~rpc ~session_id ~transport_PIF:pif ~network ~protocol
-      ~cross_server
+      ~topology
   in
   let pif' = Client.Tunnel.get_access_PIF ~rpc ~session_id ~self:tunnel in
   let uuid = Client.PIF.get_uuid ~rpc ~session_id ~self:pif' in

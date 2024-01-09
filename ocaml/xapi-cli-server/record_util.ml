@@ -951,6 +951,17 @@ let tunnel_protocol_of_string s =
 
 let tunnel_protocol_to_string = function `gre -> "gre" | `vxlan -> "vxlan"
 
+let tunnel_topology_of_string s =
+  match String.lowercase_ascii s with
+  | "none" ->
+      `None
+  | "mesh" ->
+      `Mesh
+  | _ ->
+      raise (Record_failure ("Expected 'none','mesh', got " ^ s))
+
+let tunnel_topology_to_string = function `None -> "None" | `Mesh -> "Mesh"
+
 let pif_igmp_status_to_string = function
   | `enabled ->
       "enabled"

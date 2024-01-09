@@ -20,7 +20,7 @@ val create :
   -> transport_PIF:[`PIF] Ref.t
   -> network:[`network] Ref.t
   -> protocol:API.tunnel_protocol
-  -> cross_server:bool
+  -> topology:[< `None | `Mesh]
   -> [`tunnel] Ref.t
 (** Create a tunnel for a given transport PIF and network *)
 
