@@ -4017,6 +4017,15 @@ functor
             Client.Host.get_sched_gran ~rpc ~session_id ~self
         )
 
+      let set_numa_affinity_policy ~__context ~self ~value =
+        info "Host.set_numa_affinity_policy: host='%s' policy='%s'"
+          (host_uuid ~__context self)
+          (Record_util.host_numa_affinity_policy_to_string value) ;
+        let local_fn = Local.Host.set_numa_affinity_policy ~self ~value in
+        do_op_on ~local_fn ~__context ~host:self (fun session_id rpc ->
+            Client.Host.set_numa_affinity_policy ~rpc ~session_id ~self ~value
+        )
+
       let emergency_disable_tls_verification ~__context =
         info "Host.emergency_disable_tls_verification" ;
         Local.Host.emergency_disable_tls_verification ~__context
@@ -6594,7 +6603,7 @@ functor
         let fn ~rpc:_ ~session_id:_ ~host =
           do_op_on ~__context ~host ~local_fn client_fn
         in
-        Xapi_pool_helpers.call_fn_on_slaves_then_master ~__context fn
+        Xapi_pool_helpers.call_fn_on_master_then_slaves ~__context fn
 
       let set_attributes ~__context ~self ~value =
         (* attributes will be kept out of the logs *)
@@ -6606,7 +6615,7 @@ functor
         let fn ~rpc:_ ~session_id:_ ~host =
           do_op_on ~__context ~host ~local_fn client_fn
         in
-        Xapi_pool_helpers.call_fn_on_slaves_then_master ~__context fn
+        Xapi_pool_helpers.call_fn_on_master_then_slaves ~__context fn
 
       let set_endpoints ~__context ~self ~value =
         (* endpoints will be kept out of the logs *)
@@ -6618,7 +6627,7 @@ functor
         let fn ~rpc:_ ~session_id:_ ~host =
           do_op_on ~__context ~host ~local_fn client_fn
         in
-        Xapi_pool_helpers.call_fn_on_slaves_then_master ~__context fn
+        Xapi_pool_helpers.call_fn_on_master_then_slaves ~__context fn
 
       let set_components ~__context ~self ~value =
         info "Observer.set_components: self=%s value=%s"
