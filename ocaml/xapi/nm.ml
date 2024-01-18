@@ -787,9 +787,10 @@ let bring_pif_up ~__context ?(management_interface = false) (pif : API.ref_PIF)
                 Db.Tunnel.get_protocol ~__context ~self:tunnel_ref
               in
               match protocol with
-              | `vxlan ->
+              | `vxlan | `vxlan_mesh ->
                   debug
-                    "Opening VxLAN UDP port for tunnel with protocol 'vxlan'" ;
+                    "Opening VxLAN UDP port for tunnel with protocol 'vxlan' \
+                     or 'vxlan_mesh'" ;
                   ignore
                   @@ Helpers.call_script
                        !Xapi_globs.firewall_port_config_script
@@ -856,7 +857,7 @@ let bring_pif_down ~__context ?(force = false) (pif : API.ref_PIF) =
                        !Xapi_globs.firewall_port_config_script
                        ["close"; "4789"; "udp"]
                 )
-            | `gre ->
+            | `gre | `vxlan_mesh ->
                 ()
           in
           close_network_interface maybe_close_port ()

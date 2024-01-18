@@ -2185,9 +2185,21 @@ module VLAN = struct
 end
 
 module Tunnel = struct
+  (* Adding vxlan_mesh in tunnel_protocol to distinguish cross-server private network maybe not reasonable.
+     I haven't found a better way yet. If there will be a better way found, it will be refactored.
+  *)
   let tunnel_protocol =
     Enum
-      ("tunnel_protocol", [("gre", "GRE protocol"); ("vxlan", "VxLAN Protocol")])
+      ( "tunnel_protocol"
+      , [
+          ("gre", "GRE protocol")
+        ; ("vxlan", "VxLAN Protocol")
+        ; ( "vxlan_mesh"
+          , "VxLAN Protocol: setup VxLAN tunnels to every other host in the \
+             pool for cross-server private network"
+          )
+        ]
+      )
 
   let create =
     call ~name:"create" ~doc:"Create a tunnel"
@@ -2210,7 +2222,7 @@ module Tunnel = struct
         ; {
             param_type= tunnel_protocol
           ; param_name= "protocol"
-          ; param_doc= "Protocol used for the tunnel (GRE or VxLAN)"
+          ; param_doc= "Protocol used for the tunnel (GRE, VxLAN, VxLAN_Mesh)"
           ; param_release= next_release
           ; param_default= Some (VEnum "gre")
           }
@@ -2273,7 +2285,13 @@ module Tunnel = struct
             "other_config" "Additional configuration"
         ; field ~ty:tunnel_protocol ~default_value:(Some (VEnum "gre"))
             ~lifecycle:[(Published, "1.250.0", "Add protocol field to tunnel")]
-            "protocol" "The protocol used for tunneling (either GRE or VxLAN)"
+            "protocol"
+            "The protocol used for tunneling (GRE, VxLAN, VxLAN_Mesh)"
+        ; field ~qualifier:StaticRO ~ty:Int ~default_value:(Some (VInt 0L))
+            ~lifecycle:[(Published, rel_next, "Network identifier of tunnel")]
+            "tunnel_id"
+            "Network identifier of tunnel used in a cross-server private \
+             network"
         ]
       ()
 end

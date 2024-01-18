@@ -969,10 +969,18 @@ let tunnel_protocol_of_string s =
       `gre
   | "vxlan" ->
       `vxlan
+  | "vxlan_mesh" ->
+      `vxlan_mesh
   | _ ->
-      raise (Record_failure ("Expected 'gre','vxlan', got " ^ s))
+      raise (Record_failure ("Expected 'gre','vxlan', 'vxlan_mesh', got " ^ s))
 
-let tunnel_protocol_to_string = function `gre -> "gre" | `vxlan -> "vxlan"
+let tunnel_protocol_to_string = function
+  | `gre ->
+      "gre"
+  | `vxlan ->
+      "vxlan"
+  | `vxlan_mesh ->
+      "vxlan_mesh"
 
 let pif_igmp_status_to_string = function
   | `enabled ->
