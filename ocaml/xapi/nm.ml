@@ -833,11 +833,18 @@ let bring_pif_down ~__context ?(force = false) (pif : API.ref_PIF) =
           let maybe_close_port () =
             let host = rc.API.pIF_host in
             match Db.Tunnel.get_protocol ~__context ~self:tunnel_ref with
-            | `vxlan ->
+            | `vxlan | `vxlan_mesh ->
                 let expr =
-                  Eq
-                    ( Field "protocol"
-                    , Literal (Record_util.tunnel_protocol_to_string `vxlan)
+                  Or
+                    ( Eq
+                        ( Field "protocol"
+                        , Literal (Record_util.tunnel_protocol_to_string `vxlan)
+                        )
+                    , Eq
+                        ( Field "protocol"
+                        , Literal
+                            (Record_util.tunnel_protocol_to_string `vxlan_mesh)
+                        )
                     )
                 in
                 let tunnels = Db.Tunnel.get_records_where ~__context ~expr in
@@ -857,7 +864,7 @@ let bring_pif_down ~__context ?(force = false) (pif : API.ref_PIF) =
                        !Xapi_globs.firewall_port_config_script
                        ["close"; "4789"; "udp"]
                 )
-            | `gre | `vxlan_mesh ->
+            | `gre ->
                 ()
           in
           close_network_interface maybe_close_port ()
