@@ -2187,6 +2187,14 @@ end
 module Tunnel = struct
   (* Adding vxlan_mesh in tunnel_protocol to distinguish cross-server private network maybe not reasonable.
      I haven't found a better way yet. If there will be a better way found, it will be refactored.
+     There are other two design plans:
+     1. add a enum param called topology, topology = None | Mesh. None is for XCP-ng, Mesh for cross-server private network.
+        But it's kind of ridiculous to put topology on a tunnel.
+     2. add a bool param called cross_server. false is for XCP-ng, true for cross-server private network.
+        The extensibility  of code is very poor in future.
+     I chose the plan of adding vxlan_mesh in tunnel_protocol:
+     - logically, it makes a little sense.
+     - minimal amount of code changes
   *)
   let tunnel_protocol =
     Enum
