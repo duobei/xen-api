@@ -240,7 +240,9 @@ let dss_vcpus xc doms =
         let dom_cpu_time =
           Int64.(to_float @@ logand dom.Xenctrl.cpu_time xen_flag_complement)
         in
-        let dom_cpu_time = dom_cpu_time /. 1.0e9 in
+        let dom_cpu_time =
+          dom_cpu_time /. (1.0e9 *. float_of_int dom.Xenctrl.nr_online_vcpus)
+        in
         try
           let ri = Xenctrl.domain_get_runstate_info xc domid in
           ( Rrd.VM uuid
@@ -398,14 +400,14 @@ let dss_hostload xc domains =
         ()
     )
   ; ( Rrd.Host
-    , Ds.ds_make ~name:"running_vcpus" ~units:"(vcpus)"
-        ~description:"The total number of running vCPU per host"
+    , Ds.ds_make ~name:"running_vcpus" ~units:"count"
+        ~description:"The total number of running vCPUs per host"
         ~value:(Rrd.VT_Int64 (Int64.of_int load))
         ~min:0.0 ~ty:Rrd.Gauge ~default:true ()
     )
   ; ( Rrd.Host
-    , Ds.ds_make ~name:"running_domains" ~units:"(domains)"
-        ~description:"The total number of running domain per host"
+    , Ds.ds_make ~name:"running_domains" ~units:"count"
+        ~description:"The total number of running domains per host"
         ~value:(Rrd.VT_Int64 (Int64.of_int running_domains))
         ~min:0.0 ~ty:Rrd.Gauge ~default:true ()
     )

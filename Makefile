@@ -57,7 +57,6 @@ TEST_TIMEOUT=600
 TEST_TIMEOUT2=1200
 test:
 	ulimit -S -t $(TEST_TIMEOUT); \
-	 ulimit -n 1024; \
 	 (sleep $(TEST_TIMEOUT) && ps -ewwlyF --forest)& \
 	 PSTREE_SLEEP_PID=$$!; \
 	 trap "kill $${PSTREE_SLEEP_PID}" SIGINT SIGTERM EXIT; \
@@ -118,6 +117,10 @@ sdksanity: sdk
 	sed -i 's/FriendlyErrorNames.ResourceManager/null/g' ./_build/install/default/xapi/sdk/csharp/src/Failure.cs
 	cd _build/install/default/xapi/sdk/csharp/src && dotnet add package Newtonsoft.Json && dotnet build -f netstandard2.0
 
+.PHONY: sdk-build-java
+
+sdk-build-java: sdk
+	cd _build/install/default/xapi/sdk/java && mvn -f xen-api/pom.xml -B clean package install -Drevision=0.0
 
 python:
 	$(MAKE) -C scripts/examples/python build
@@ -244,7 +247,9 @@ install: build doc sdk doc-json
 		gzip http-lib pciutil sexpr stunnel uuid xml-light2 zstd xapi-compression safe-resources \
 		message-switch message-switch-async message-switch-cli message-switch-core message-switch-lwt \
 		message-switch-unix xapi-idl forkexec xapi-forkexecd xapi-storage xapi-storage-script xapi-storage-cli \
-		xapi-nbd varstored-guard xapi-log xapi-open-uri xapi-tracing xapi-expiry-alerts cohttp-posix
+		xapi-nbd varstored-guard xapi-log xapi-open-uri xapi-tracing xapi-expiry-alerts cohttp-posix \
+		xapi-rrd xapi-inventory \
+		xapi-stdext-date xapi-stdext-encodings xapi-stdext-pervasives xapi-stdext-std xapi-stdext-threads xapi-stdext-unix xapi-stdext-zerocheck xapi-stdext
 # docs
 	mkdir -p $(DESTDIR)$(DOCDIR)
 	cp -r $(XAPIDOC)/jekyll $(DESTDIR)$(DOCDIR)
@@ -264,7 +269,9 @@ uninstall:
 		gzip http-lib pciutil sexpr stunnel uuid xml-light2 zstd xapi-compression safe-resources \
 		message-switch message-switch-async message-switch-cli message-switch-core message-switch-lwt \
 		message-switch-unix xapi-idl forkexec xapi-forkexecd xapi-storage xapi-storage-script xapi-log \
-		xapi-open-uri xapi-tracing xapi-expiry-alerts cohttp-posix
+		xapi-open-uri xapi-tracing xapi-expiry-alerts cohttp-posix \
+		xapi-rrd xapi-inventory \
+		xapi-stdext-date xapi-stdext-encodings xapi-stdext-pervasives xapi-stdext-std xapi-stdext-threads xapi-stdext-unix xapi-stdext-zerocheck xapi-stdext
 
 compile_flags.txt: Makefile
 	(ocamlc -config-var ocamlc_cflags;\

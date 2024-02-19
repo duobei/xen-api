@@ -1958,7 +1958,7 @@ module PIF_metrics = struct
         ; field ~qualifier:DynamicRO ~ty:String "device_name"
             "Report device name"
         ; field ~qualifier:DynamicRO ~ty:Int "speed"
-            "Speed of the link (if available)"
+            "Speed of the link in Mbit/s (if available)"
         ; field ~qualifier:DynamicRO ~ty:Bool "duplex"
             "Full duplex capability of the link (if available)"
         ; field ~qualifier:DynamicRO ~ty:String "pci_bus_path"
@@ -7992,6 +7992,7 @@ let emergency_calls =
   ; (Datamodel_host.t, Datamodel_host.emergency_reset_server_certificate)
   ; (Datamodel_host.t, Datamodel_host.emergency_disable_tls_verification)
   ; (Datamodel_host.t, Datamodel_host.emergency_reenable_tls_verification)
+  ; (Datamodel_host.t, Datamodel_host.emergency_clear_mandatory_guidance)
   ]
 
 (** Whitelist of calls that will not get forwarded from the slave to master via the unix domain socket *)

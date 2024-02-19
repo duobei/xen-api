@@ -100,7 +100,7 @@ class Proxy(xmlrpc.client.ServerProxy):
     def __init__(self, uri, transport=None, encoding=None, verbose=0,
                  allow_none=1):
         xmlrpc.client.ServerProxy.__init__(self, uri, transport, encoding,
-                                       verbose, allow_none)
+                                           bool(verbose), bool(allow_none))
         self.transport = transport
 
     def request(self, methodname, params):
@@ -223,7 +223,9 @@ class API(object):
         self.path = self.dispatcher.get_path({"uid": self.uid})
         base_path = os.path.dirname(self.path)
         if not os.path.exists(base_path): os.makedirs(base_path)
-        self.dest = open(self.path, "wb")
+        # Open file at pos 0, creating but not truncating the file(not possible otherwise):
+        fd = os.open(self.path, os.O_RDWR|os.O_CREAT)
+        self.dest = os.fdopen(fd, "r+b")
 
     def __del__(self):
         self.deregister()
@@ -246,11 +248,11 @@ class API(object):
 
     def get_header(self):
         """Get the 'static' first line of the expected output format."""
-        return self.header
+        return self.header  # pytype: disable=attribute-error
 
     def get_path(self):
         """Get the path of the file in which to write the results to."""
-        return self.path
+        return self.path  # pytype: disable=attribute-error
 
     def register(self):
         """Register plugin if not already registered, and return next_reading."""
@@ -286,7 +288,7 @@ class API(object):
                 return
             except socket.error:
                 msg = "Failed to contact xcp-rrdd. Sleeping for 5 seconds .."
-                print >> sys.stderr, msg
+                print(msg, file=sys.stderr)
                 time.sleep(5)
 
     def update(self):

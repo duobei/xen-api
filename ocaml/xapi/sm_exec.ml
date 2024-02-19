@@ -326,7 +326,7 @@ let with_session sr f =
 let exec_xmlrpc ~dbg ?context:_ ?(needs_session = true) (driver : string)
     (call : call) =
   with_dbg ~name:call.cmd ~dbg @@ fun di ->
-  let _ = Debuginfo.to_string di in
+  let dbg = Debuginfo.to_string di in
   let do_call call =
     let xml = xmlrpc_of_call call in
     let name = Printf.sprintf "sm_exec: %s" call.cmd in
@@ -336,8 +336,19 @@ let exec_xmlrpc ~dbg ?context:_ ?(needs_session = true) (driver : string)
           (* Logging call.cmd is safe, but call.args could contain a password. *)
           try
             E.debug "smapiv2=>smapiv1 [label=\"%s\"];" call.cmd ;
+            let args = [Xml.to_string xml] in
             let output, stderr =
-              Forkhelpers.execute_command_get_output exe [Xml.to_string xml]
+              let env, exe, args =
+                match Xapi_observer_components.is_smapi_enabled () with
+                | false ->
+                    (None, exe, args)
+                | true ->
+                    let traceparent = Debuginfo.traceparent_of_dbg dbg in
+                    Xapi_observer_components.env_exe_args_of
+                      ~component:Xapi_observer_components.SMApi ~traceparent
+                      ~exe ~args
+              in
+              Forkhelpers.execute_command_get_output ?env exe args
             in
             try (Xml.parse_string output, stderr)
             with e ->

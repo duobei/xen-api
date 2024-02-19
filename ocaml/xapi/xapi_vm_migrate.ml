@@ -479,6 +479,9 @@ let remove_stale_pcis ~__context ~vm =
 let pool_migrate_complete ~__context ~vm ~host:_ =
   let id = Db.VM.get_uuid ~__context ~self:vm in
   debug "VM.pool_migrate_complete %s" id ;
+  (* clear RestartDeviceModel guidance on VM migrate *)
+  Xapi_vm_lifecycle.remove_pending_guidance ~__context ~self:vm
+    ~value:`restart_device_model ;
   let dbg = Context.string_of_task __context in
   let queue_name = Xapi_xenops_queue.queue_of_vm ~__context ~self:vm in
   if Xapi_xenops.vm_exists_in_xenopsd queue_name dbg id then (
@@ -1632,6 +1635,11 @@ let migrate_send' ~__context ~vm ~dest ~live:_ ~vdi_map ~vif_map ~vgpu_map
     if (not is_intra_pool) && not copy then (
       info "Destroying VM ref=%s uuid=%s" (Ref.string_of vm) vm_uuid ;
       Xapi_vm_lifecycle.force_state_reset ~__context ~self:vm ~value:`Halted ;
+      let vtpms =
+        vm_and_snapshots
+        |> List.concat_map (fun self -> Db.VM.get_VTPMs ~__context ~self)
+      in
+      List.iter (fun self -> Xapi_vtpm.destroy ~__context ~self) vtpms ;
       List.iter (fun self -> Db.VM.destroy ~__context ~self) vm_and_snapshots
     ) ;
     SMPERF.debug "vm.migrate_send exiting vm:%s" vm_uuid ;

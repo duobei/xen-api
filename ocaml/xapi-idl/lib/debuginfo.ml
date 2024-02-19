@@ -65,3 +65,10 @@ let with_dbg ?(with_thread = false) ~module_name ~name ~dbg f =
       Debug.with_thread_associated di.log f_with_trace ()
   | false ->
       f_with_trace ()
+
+let traceparent_of_dbg dbg =
+  match String.split_on_char separator dbg with
+  | [_; traceparent] ->
+      Some traceparent
+  | _ ->
+      None
