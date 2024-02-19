@@ -2185,9 +2185,29 @@ module VLAN = struct
 end
 
 module Tunnel = struct
+  (* Adding vxlan_mesh in tunnel_protocol to distinguish cross-server private network maybe not reasonable.
+     I haven't found a better way yet. If there will be a better way found, it will be refactored.
+     There are other two design plans:
+     1. add a enum param called topology, topology = None | Mesh. None is for XCP-ng, Mesh for cross-server private network.
+        But it's kind of ridiculous to put topology on a tunnel.
+     2. add a bool param called cross_server. false is for XCP-ng, true for cross-server private network.
+        The extensibility  of code is very poor in future.
+     I chose the plan of adding vxlan_mesh in tunnel_protocol:
+     - logically, it makes a little sense.
+     - minimal amount of code changes
+  *)
   let tunnel_protocol =
     Enum
-      ("tunnel_protocol", [("gre", "GRE protocol"); ("vxlan", "VxLAN Protocol")])
+      ( "tunnel_protocol"
+      , [
+          ("gre", "GRE protocol")
+        ; ("vxlan", "VxLAN Protocol")
+        ; ( "vxlan_mesh"
+          , "VxLAN Protocol: setup VxLAN tunnels to every other host in the \
+             pool for cross-server private network"
+          )
+        ]
+      )
 
   let create =
     call ~name:"create" ~doc:"Create a tunnel"
@@ -2210,8 +2230,8 @@ module Tunnel = struct
         ; {
             param_type= tunnel_protocol
           ; param_name= "protocol"
-          ; param_doc= "Protocol used for the tunnel (GRE or VxLAN)"
-          ; param_release= numbered_release "1.250.0"
+          ; param_doc= "Protocol used for the tunnel (GRE, VxLAN, VxLAN_Mesh)"
+          ; param_release= next_release
           ; param_default= Some (VEnum "gre")
           }
         ]
@@ -2273,7 +2293,13 @@ module Tunnel = struct
             "other_config" "Additional configuration"
         ; field ~ty:tunnel_protocol ~default_value:(Some (VEnum "gre"))
             ~lifecycle:[(Published, "1.250.0", "Add protocol field to tunnel")]
-            "protocol" "The protocol used for tunneling (either GRE or VxLAN)"
+            "protocol"
+            "The protocol used for tunneling (GRE, VxLAN, VxLAN_Mesh)"
+        ; field ~qualifier:StaticRO ~ty:Int ~default_value:(Some (VInt 0L))
+            ~lifecycle:[(Published, rel_next, "Network identifier of tunnel")]
+            "tunnel_id"
+            "Network identifier of tunnel used in a cross-server private \
+             network"
         ]
       ()
 end

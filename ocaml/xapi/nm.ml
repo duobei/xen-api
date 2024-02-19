@@ -787,9 +787,10 @@ let bring_pif_up ~__context ?(management_interface = false) (pif : API.ref_PIF)
                 Db.Tunnel.get_protocol ~__context ~self:tunnel_ref
               in
               match protocol with
-              | `vxlan ->
+              | `vxlan | `vxlan_mesh ->
                   debug
-                    "Opening VxLAN UDP port for tunnel with protocol 'vxlan'" ;
+                    "Opening VxLAN UDP port for tunnel with protocol 'vxlan' \
+                     or 'vxlan_mesh'" ;
                   ignore
                   @@ Helpers.call_script
                        !Xapi_globs.firewall_port_config_script
@@ -832,11 +833,18 @@ let bring_pif_down ~__context ?(force = false) (pif : API.ref_PIF) =
           let maybe_close_port () =
             let host = rc.API.pIF_host in
             match Db.Tunnel.get_protocol ~__context ~self:tunnel_ref with
-            | `vxlan ->
+            | `vxlan | `vxlan_mesh ->
                 let expr =
-                  Eq
-                    ( Field "protocol"
-                    , Literal (Record_util.tunnel_protocol_to_string `vxlan)
+                  Or
+                    ( Eq
+                        ( Field "protocol"
+                        , Literal (Record_util.tunnel_protocol_to_string `vxlan)
+                        )
+                    , Eq
+                        ( Field "protocol"
+                        , Literal
+                            (Record_util.tunnel_protocol_to_string `vxlan_mesh)
+                        )
                     )
                 in
                 let tunnels = Db.Tunnel.get_records_where ~__context ~expr in
