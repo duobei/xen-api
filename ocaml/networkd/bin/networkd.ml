@@ -202,8 +202,11 @@ let bind () =
   S.Bridge.get_all_ports Bridge.get_all_ports ;
   S.Bridge.get_all_bonds Bridge.get_all_bonds ;
   S.Bridge.set_persistent Bridge.set_persistent ;
+  S.Bridge.set_rstp_enable Bridge.set_rstp_enable ;
   S.Bridge.add_port Bridge.add_port ;
+  S.Bridge.add_tunnel Bridge.add_tunnel ;
   S.Bridge.remove_port Bridge.remove_port ;
+  S.Bridge.remove_tunnel Bridge.remove_tunnel ;
   S.Bridge.get_interfaces Bridge.get_interfaces ;
   S.Bridge.get_physical_interfaces Bridge.get_physical_interfaces ;
   S.Bridge.make_config Bridge.make_config ;

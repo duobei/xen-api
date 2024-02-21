@@ -1459,6 +1459,17 @@ module Ovs = struct
       in
       ["--"; "--may-exist"; "add-port"; bridge; name] @ type_args
 
+    let create_tunnel_port_arg proto local_ip remote_ip name bridge vni =
+      let protocol = Printf.sprintf "type=%s" proto in
+      let local = Printf.sprintf "options:local_ip=%s" local_ip in
+      let remote = Printf.sprintf "options:remote_ip=%s" remote_ip in
+      let dst_port = "options:dst_port=4789" in
+      let key = Printf.sprintf "options:key=%d" vni in
+      let type_args =
+        ["--"; "set"; "interface"; name; protocol; local; remote; dst_port; key]
+      in
+      ["--"; "--may-exist"; "add-port"; bridge; name] @ type_args
+
     let create_bridge ?mac ?external_id ?disable_in_band ?igmp_snooping
         ~fail_mode vlan vlan_bug_workaround name =
       let vlan_arg =
@@ -1669,6 +1680,11 @@ module Ovs = struct
     let create_port ?(internal = false) name bridge =
       let ty = if internal then Some "internal" else None in
       vsctl (create_port_arg ?ty name bridge)
+
+    let create_tunnel_port proto local_ip remote_ip name bridge vni =
+      (* currently we only support ipv4 network, in future we will support ipv6 *)
+      (* here proto is always VxLAN *)
+      vsctl (create_tunnel_port_arg proto local_ip remote_ip name bridge vni)
 
     let destroy_port name =
       vsctl ["--"; "--with-iface"; "--if-exists"; "del-port"; name]
