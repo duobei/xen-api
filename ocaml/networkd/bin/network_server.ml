@@ -14,6 +14,7 @@
 
 open Network_utils
 open Network_interface
+
 module S = Network_interface.Interface_API (Idl.Exn.GenServer ())
 
 module D = Debug.Make (struct let name = "network_server" end)
@@ -1337,15 +1338,17 @@ module Bridge = struct
             let msg =
               Printf.sprintf "Tunnel port config has some defect %s" tunnel_port
             in
-            let raise_error = raise (Network_error (Internal_error msg)) in
-            let local = Option.value ~default:raise_error local_ip in
-            let remote = Option.value ~default:raise_error remote_ip in
-            let proto = Option.value ~default:raise_error protocol in
-            let id = Option.value ~default:raise_error tunnel_id in
+            let raise_error () = raise (Network_error (Internal_error msg)) in
+            let local = Option.value ~default:(raise_error ()) local_ip in
+            let remote = Option.value ~default:(raise_error ()) remote_ip in
+            let proto = Option.value ~default:(raise_error ()) protocol in
+            let id = Option.value ~default:(raise_error ()) tunnel_id in
             let csum =
-              Option.value ~default:raise_error checksum_offload_disable
+              Option.value ~default:(raise_error ()) checksum_offload_disable
             in
-            let len = Option.value ~default:raise_error tunnel_header_length in
+            let len =
+              Option.value ~default:(raise_error ()) tunnel_header_length
+            in
             match proto with
             | "vxlan" ->
                 let iface = tunnel_port in
@@ -1383,7 +1386,7 @@ module Bridge = struct
             | _ ->
                 debug "fail to setup tunnel on %s (%s %s %s)" bridge proto
                   remote id ;
-                raise (Network_error (Internal_error msg))
+                raise_error ()
           )
         | Bridge ->
             raise (Network_error Not_implemented)
