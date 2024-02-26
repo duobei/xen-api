@@ -81,6 +81,8 @@ type iface = string [@@deriving rpcty]
 
 type port = string [@@deriving rpcty]
 
+type tunnel = string [@@deriving rpcty]
+
 type bridge = string [@@deriving rpcty]
 
 (* rpcty cannot handle polymorphic variant, so change the definition to variant *)
@@ -166,13 +168,25 @@ type port_config_t = {
 }
 [@@deriving rpcty]
 
+type tunnel_config_t = {
+    local_ip: string option [@default None]
+  ; remote_ip: string option [@default None]
+  ; protocol: string option [@default None]
+  ; tunnel_id: string option [@default None]
+  ; checksum_offload_disable: bool option [@default None]
+  ; tunnel_header_length: int option [@default None]
+}
+[@@deriving rpcty]
+
 type bridge_config_t = {
-    ports: (port * port_config_t) list [@default []]
+    tunnels: (tunnel * tunnel_config_t) list [@default []]
+  ; ports: (port * port_config_t) list [@default []]
   ; vlan: (bridge * int) option [@default None]
   ; bridge_mac: string option [@default None]
   ; igmp_snooping: bool option [@default None]
   ; other_config: (string * string) list [@default []]
   ; persistent_b: bool [@default false]
+  ; rstp_enable: bool [@default false]
 }
 [@@deriving rpcty]
 
@@ -201,12 +215,14 @@ let default_interface =
 
 let default_bridge =
   {
-    ports= []
+    tunnels= []
+  ; ports= []
   ; vlan= None
   ; bridge_mac= None
   ; igmp_snooping= None
   ; other_config= []
   ; persistent_b= false
+  ; rstp_enable= false
   }
 
 let default_port =
@@ -507,6 +523,15 @@ module Interface_API (R : RPC) = struct
         ["Make PIF to persistent or not"]
         (debug_info_p @-> iface_name_p @-> value_p @-> returning unit_p err)
 
+    let set_rstp_enable =
+      let name_p = Param.mk ~name:"name" ~description:["bridge name"] bridge in
+      let value_p =
+        Param.mk ~name:"value" ~description:["rstp_enable value"] Types.bool
+      in
+      declare "Bridge.set_rstp_enable"
+        ["Turn bridge rstp on or off"]
+        (debug_info_p @-> name_p @-> value_p @-> returning unit_p err)
+
     let make_config =
       let module T = struct
         type _conservative_t = bool [@@deriving rpcty]
@@ -616,6 +641,15 @@ module Interface_API (R : RPC) = struct
         ["Make bridge to persistent or not"]
         (debug_info_p @-> name_p @-> value_p @-> returning unit_p err)
 
+    let set_rstp_enable =
+      let name_p = Param.mk ~name:"name" ~description:["bridge name"] bridge in
+      let value_p =
+        Param.mk ~name:"value" ~description:["rstp_enable value"] Types.bool
+      in
+      declare "Bridge.set_rstp_enable"
+        ["Turn bridge rstp on or off"]
+        (debug_info_p @-> name_p @-> value_p @-> returning unit_p err)
+
     let add_port =
       let module T = struct
         type _bond_mac_opt_t = string option [@@deriving rpcty]
@@ -655,6 +689,67 @@ module Interface_API (R : RPC) = struct
         @-> returning unit_p err
         )
 
+    let add_tunnel =
+      let module T = struct
+        type _local_ip_opt_t = string option [@@deriving rpcty]
+
+        type _remote_ip_opt_t = string option [@@deriving rpcty]
+
+        type _protocol_opt_t = string option [@@deriving rpcty]
+
+        type _tunnel_id_opt_t = string option [@@deriving rpcty]
+
+        type _checksum_offload_disable_opt_t = bool option [@@deriving rpcty]
+
+        type _tunnel_header_length_opt_t = int option [@@deriving rpcty]
+      end in
+      let bridge_p =
+        Param.mk ~name:"bridge" ~description:["bridge name"] bridge
+      in
+      let tunnel_port_p =
+        Param.mk ~name:"tunnel_port" ~description:["tunnel port name"] tunnel
+      in
+      let local_ip_p =
+        Param.mk ~name:"local_ip"
+          ~description:["tunnel remote endpoint ip"]
+          T._local_ip_opt_t
+      in
+      let remote_ip_p =
+        Param.mk ~name:"remote_ip"
+          ~description:["tunnel remote endpoint ip"]
+          T._remote_ip_opt_t
+      in
+      let protocol_p =
+        Param.mk ~name:"protocol" ~description:["tunnel protocol"]
+          T._protocol_opt_t
+      in
+      let tunnel_id_p =
+        Param.mk ~name:"tunnel_id" ~description:["tunnel vxlan id"]
+          T._tunnel_id_opt_t
+      in
+      let checksum_offload_disable_p =
+        Param.mk ~name:"checksum_offload_disable"
+          ~description:["disable checksum offload on vxlan netdev"]
+          T._checksum_offload_disable_opt_t
+      in
+      let tunnel_header_length_p =
+        Param.mk ~name:"tunnel_header_length"
+          ~description:["the length of header attached to each tunnel packet"]
+          T._tunnel_header_length_opt_t
+      in
+      declare "Bridge.add_tunnel" ["Add tunnel"]
+        (debug_info_p
+        @-> bridge_p
+        @-> tunnel_port_p
+        @-> local_ip_p
+        @-> remote_ip_p
+        @-> protocol_p
+        @-> tunnel_id_p
+        @-> checksum_offload_disable_p
+        @-> tunnel_header_length_p
+        @-> returning unit_p err
+        )
+
     let remove_port =
       let bridge_p =
         Param.mk ~name:"bridge" ~description:["bridge name"] bridge
@@ -662,6 +757,16 @@ module Interface_API (R : RPC) = struct
       let name_p = Param.mk ~name:"name" ~description:["port name"] port in
       declare "Bridge.remove_port" ["Remove port"]
         (debug_info_p @-> bridge_p @-> name_p @-> returning unit_p err)
+
+    let remove_tunnel =
+      let bridge_p =
+        Param.mk ~name:"bridge" ~description:["bridge name"] bridge
+      in
+      let tunnel_p =
+        Param.mk ~name:"tunnel" ~description:["tunnel name"] tunnel
+      in
+      declare "Bridge.remove_tunnel" ["Remove tunnel"]
+        (debug_info_p @-> bridge_p @-> tunnel_p @-> returning unit_p err)
 
     let get_interfaces =
       let module T = struct

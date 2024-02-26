@@ -14,6 +14,7 @@
 
 open Network_utils
 open Network_interface
+
 module S = Network_interface.Interface_API (Idl.Exn.GenServer ())
 
 module D = Debug.Make (struct let name = "network_server" end)
@@ -1328,6 +1329,70 @@ module Bridge = struct
       )
       ()
 
+  let add_tunnel dbg bridge tunnel_port local_ip remote_ip protocol tunnel_id
+      checksum_offload_disable tunnel_header_length =
+    Debug.with_thread_associated dbg
+      (fun () ->
+        match !backend_kind with
+        | Openvswitch -> (
+            let msg =
+              Printf.sprintf "Tunnel port config has some defect %s" tunnel_port
+            in
+            let raise_error () = raise (Network_error (Internal_error msg)) in
+            let local = Option.value ~default:(raise_error ()) local_ip in
+            let remote = Option.value ~default:(raise_error ()) remote_ip in
+            let proto = Option.value ~default:(raise_error ()) protocol in
+            let id = Option.value ~default:(raise_error ()) tunnel_id in
+            let csum =
+              Option.value ~default:(raise_error ()) checksum_offload_disable
+            in
+            let len =
+              Option.value ~default:(raise_error ()) tunnel_header_length
+            in
+            match proto with
+            | "vxlan" ->
+                let iface = tunnel_port in
+                let vni = int_of_string id in
+                ignore
+                  (Ovs.create_tunnel_port proto local remote iface bridge vni) ;
+                if csum then (
+                  let devname = "vxlan_sys_4789" in
+                  let options = [("rx", "off"); ("tx", "off")] in
+                  (* disable checksum offload *)
+                  Ethtool.set_offload devname options ;
+                  debug "setup tunnel on %s (%s %s %s) hdr length (%d) succeeds"
+                    bridge proto remote id len ;
+                  (* add to network config *)
+                  let config = get_config bridge in
+                  let tunnels =
+                    if List.mem_assoc tunnel_port config.tunnels then
+                      List.remove_assoc tunnel_port config.tunnels
+                    else
+                      config.tunnels
+                  in
+                  let tunnel =
+                    {
+                      local_ip
+                    ; remote_ip
+                    ; protocol
+                    ; tunnel_id
+                    ; checksum_offload_disable
+                    ; tunnel_header_length
+                    }
+                  in
+                  let tunnels = (tunnel_port, tunnel) :: tunnels in
+                  update_config bridge {config with tunnels}
+                )
+            | _ ->
+                debug "fail to setup tunnel on %s (%s %s %s)" bridge proto
+                  remote id ;
+                raise_error ()
+          )
+        | Bridge ->
+            raise (Network_error Not_implemented)
+      )
+      ()
+
   let remove_port dbg bridge name =
     Debug.with_thread_associated dbg
       (fun () ->
@@ -1342,6 +1407,23 @@ module Bridge = struct
             ignore (Ovs.destroy_port name)
         | Bridge ->
             ignore (Brctl.destroy_port bridge name)
+      )
+      ()
+
+  let remove_tunnel dbg bridge tunnel =
+    Debug.with_thread_associated dbg
+      (fun () ->
+        debug "Removing tunnel %s from bridge %s" tunnel bridge ;
+        let config = get_config bridge in
+        ( if List.mem_assoc tunnel config.tunnels then
+            let tunnels = List.remove_assoc tunnel config.tunnels in
+            update_config bridge {config with tunnels}
+        ) ;
+        match !backend_kind with
+        | Openvswitch ->
+            ignore (Ovs.destroy_port tunnel)
+        | Bridge ->
+            raise (Network_error Not_implemented)
       )
       ()
 
@@ -1391,6 +1473,14 @@ module Bridge = struct
       (fun () ->
         debug "Making bridge %s %spersistent" name (if value then "" else "non-") ;
         update_config name {(get_config name) with persistent_b= value}
+      )
+      ()
+
+  let set_rstp_enable dbg name value =
+    Debug.with_thread_associated dbg
+      (fun () ->
+        debug "Turn bridge %s rstp %s" name (if value then "on" else "off") ;
+        update_config name {(get_config name) with rstp_enable= value}
       )
       ()
 
@@ -1452,8 +1542,16 @@ module Bridge = struct
         List.iter
           (function
             | ( bridge_name
-              , ({ports; vlan; bridge_mac; igmp_snooping; other_config; _} as c)
-              ) ->
+              , ( {
+                    tunnels
+                  ; ports
+                  ; vlan
+                  ; bridge_mac
+                  ; igmp_snooping
+                  ; other_config
+                  ; _
+                  } as c
+                ) ) ->
                 update_config bridge_name c ;
                 exec (fun () ->
                     create dbg vlan bridge_mac igmp_snooping (Some other_config)
@@ -1466,6 +1564,24 @@ module Bridge = struct
                           (Some bond_properties) (Some kind)
                       )
                       ports
+                ) ;
+                exec (fun () ->
+                    List.iter
+                      (fun ( tunnel_port
+                           , {
+                               local_ip
+                             ; remote_ip
+                             ; protocol
+                             ; tunnel_id
+                             ; checksum_offload_disable
+                             ; tunnel_header_length
+                             }
+                           ) ->
+                        add_tunnel dbg bridge_name tunnel_port local_ip
+                          remote_ip protocol tunnel_id checksum_offload_disable
+                          tunnel_header_length
+                      )
+                      tunnels
                 )
             )
           config
