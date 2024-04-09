@@ -1,3 +1,5 @@
+open Datamodel_types
+
 (** Exception for unknown wire protocol. *)
 exception Unknown_wire_protocol
 
@@ -129,3 +131,15 @@ val render_file : string * string -> Mustache.Json.t -> string -> string -> unit
 
 val json_releases : Mustache.Json.t
 (** JSON structure representing release information. *)
+
+val session_id : param
+(** Param of session_id. *)
+
+val get_event_snapshot : string -> Mustache.Json.value list
+(** Get field's json of event_snapshot.  *)
+
+val get_event_session_value : string -> (string * Mustache.Json.value) list
+(** Get the field values of event and session. *)
+
+val objects : obj list
+(** Objects of api that generate SDKs. *)
