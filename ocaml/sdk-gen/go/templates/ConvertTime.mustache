@@ -1,7 +1,6 @@
-{{#time}}
+{{#serialize}}
 var timeFormats = []string{time.RFC3339, "20060102T15:04:05Z", "20060102T15:04:05"}
 
-{{#serialize}}
 //nolint:unparam
 func serialize{{func_partial_type}}(context string, value {{type}}) (string, error) {
 	_ = context
@@ -33,4 +32,3 @@ func deserialize{{func_partial_type}}(context string, input interface{}) (value 
 }
 
 {{/deserialize}}
-{{/time}}

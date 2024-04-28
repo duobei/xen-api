@@ -1,4 +1,3 @@
-{{#set}}
 {{#serialize}}
 func serialize{{func_partial_type}}(context string, slice []{{type}}) (set []interface{}, err error) {
 	set = make([]interface{}, len(slice))
@@ -34,4 +33,3 @@ func deserialize{{func_partial_type}}(context string, input interface{}) (slice 
 }
 
 {{/deserialize}}
-{{/set}}

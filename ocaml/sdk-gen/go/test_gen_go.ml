@@ -900,31 +900,31 @@ let simple_type_convert : Mustache.Json.t =
     ; `O [("func_partial_type", `String "Bool"); ("type", `String "bool")]
     ]
   in
-  `O [("simple_type", `O [("serialize", `A array); ("deserialize", `A array)])]
+  `O [("serialize", `A array); ("deserialize", `A array)]
 
 let int_convert : Mustache.Json.t =
   let array =
     [`O [("func_partial_type", `String "Int"); ("type", `String "int")]]
   in
-  `O [("int", `O [("serialize", `A array); ("deserialize", `A array)])]
+  `O [("serialize", `A array); ("deserialize", `A array)]
 
 let float_convert : Mustache.Json.t =
   let array =
     [`O [("func_partial_type", `String "Float"); ("type", `String "float64")]]
   in
-  `O [("float", `O [("serialize", `A array); ("deserialize", `A array)])]
+  `O [("serialize", `A array); ("deserialize", `A array)]
 
 let time_convert : Mustache.Json.t =
   let array =
     [`O [("func_partial_type", `String "Time"); ("type", `String "time.Time")]]
   in
-  `O [("time", `O [("serialize", `A array); ("deserialize", `A array)])]
+  `O [("serialize", `A array); ("deserialize", `A array)]
 
 let ref_string_convert : Mustache.Json.t =
   let array =
     [`O [("func_partial_type", `String "VMRef"); ("type", `String "VMRef")]]
   in
-  `O [("ref", `O [("serialize", `A array); ("deserialize", `A array)])]
+  `O [("serialize", `A array); ("deserialize", `A array)]
 
 let set_convert : Mustache.Json.t =
   let serialize =
@@ -947,8 +947,7 @@ let set_convert : Mustache.Json.t =
         ]
     ]
   in
-  `O
-    [("set", `O [("serialize", `A serialize); ("deserialize", `A deserialize)])]
+  `O [("serialize", `A serialize); ("deserialize", `A deserialize)]
 
 let record_convert : Mustache.Json.t =
   let array =
@@ -981,7 +980,7 @@ let record_convert : Mustache.Json.t =
         ]
     ]
   in
-  `O [("record", `O [("serialize", `A array); ("deserialize", `A array)])]
+  `O [("serialize", `A array); ("deserialize", `A array)]
 
 let interface_convert : Mustache.Json.t =
   let array =
@@ -993,7 +992,7 @@ let interface_convert : Mustache.Json.t =
         ]
     ]
   in
-  `O [("interface", `O [("deserialize", `A array)])]
+  `O [("deserialize", `A array)]
 
 let map_convert : Mustache.Json.t =
   let deserialize =
@@ -1018,8 +1017,7 @@ let map_convert : Mustache.Json.t =
         ]
     ]
   in
-  `O
-    [("map", `O [("serialize", `A serialize); ("deserialize", `A deserialize)])]
+  `O [("serialize", `A serialize); ("deserialize", `A deserialize)]
 
 let enum_convert : Mustache.Json.t =
   let array =
@@ -1046,7 +1044,7 @@ let enum_convert : Mustache.Json.t =
         ]
     ]
   in
-  `O [("enum", `O [("serialize", `A array); ("deserialize", `A array)])]
+  `O [("serialize", `A array); ("deserialize", `A array)]
 
 let batch_convert : Mustache.Json.t =
   let array =
@@ -1077,11 +1075,11 @@ let batch_convert : Mustache.Json.t =
         ]
     ]
   in
-  `O [("batch", `O [("deserialize", `A array)])]
+  `O [("deserialize", `A array)]
 
 let option_convert : Mustache.Json.t =
   let array = [`O [("func_partial_type", `String "SrStatRecord")]] in
-  `O [("option", `O [("serialize", `A array); ("deserialize", `A array)])]
+  `O [("serialize", `A array); ("deserialize", `A array)]
 
 module TemplatesTest = Generic.MakeStateless (struct
   module Io = struct

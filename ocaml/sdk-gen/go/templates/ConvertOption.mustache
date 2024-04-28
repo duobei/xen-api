@@ -1,4 +1,3 @@
-{{#option}}
 {{#serialize}}
 func serializeOption{{func_partial_type}}(context string, input Option{{func_partial_type}}) (option interface{}, err error) {
 	if input == nil {
@@ -26,4 +25,3 @@ func deserializeOption{{func_partial_type}}(context string, input interface{}) (
 }
 
 {{/deserialize}}
-{{/option}}

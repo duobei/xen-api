@@ -1,4 +1,3 @@
-{{#float}}
 {{#serialize}}
 //nolint:unparam
 func serialize{{func_partial_type}}(context string, value {{type}}) (interface{}, error) {
@@ -37,4 +36,3 @@ func deserialize{{func_partial_type}}(context string, input interface{}) (value 
 }
 
 {{/deserialize}}
-{{/float}}

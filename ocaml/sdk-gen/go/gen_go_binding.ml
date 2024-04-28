@@ -24,6 +24,35 @@ let render_enums enums destdir =
   let rendered = header ^ enums ^ "\n" in
   generate_file ~rendered ~destdir ~output_file:"enums.go"
 
+let render_api_versions destdir =
+  let rendered =
+    let header =
+      render_template "FileHeader.mustache"
+        (`O
+          [
+            ( "modules"
+            , `O
+                [
+                  ("import", `Bool true)
+                ; ( "items"
+                  , `A
+                      [
+                        `O [("name", `String "errors"); ("sname", `Null)]
+                      ; `O [("name", `String "fmt"); ("sname", `Null)]
+                      ]
+                  )
+                ]
+            )
+          ]
+          )
+        ~newline:true ()
+    in
+    header
+    ^ render_template "APIVersions.mustache" CommonFunctions.json_releases
+        ~newline:true ()
+  in
+  generate_file ~rendered ~destdir ~output_file:"api_versions.go"
+
 let render_api_messages_and_errors destdir =
   let obj =
     `O
@@ -69,40 +98,42 @@ let render_convert_header () =
   in
   render_template "FileHeader.mustache" obj ~newline:true ()
 
-let render_converts converts destdir =
-  let templates =
-    [
-      "ConvertSimpleType.mustache"
-    ; "ConvertInt.mustache"
-    ; "ConvertFloat.mustache"
-    ; "ConvertTime.mustache"
-    ; "ConvertRef.mustache"
-    ; "ConvertSet.mustache"
-    ; "ConvertRecord.mustache"
-    ; "ConvertInterface.mustache"
-    ; "ConvertMap.mustache"
-    ; "ConvertEnum.mustache"
-    ; "ConvertBatch.mustache"
-    ; "ConvertOption.mustache"
-    ]
+let render_converts destdir =
+  let event = render_template "ConvertBatch.mustache" Convert.event_batch () in
+  let interface =
+    render_template "ConvertInterface.mustache" Convert.interface ()
+  in
+  let param_types = Types.of_params objects in
+  let result_types = Types.of_results objects in
+  let generate types of_json =
+    types
+    |> List.map Convert.of_ty
+    |> List.map (fun params ->
+           let template = Convert.template_of_convert params in
+           let json : Mustache.Json.t = of_json params in
+           render_template template json ()
+       )
+    |> String.concat ""
   in
   let rendered =
-    let rendered =
-      templates
-      |> List.map (fun template -> render_template template converts ())
-      |> String.concat ""
-      |> String.trim
-    in
-    render_convert_header () ^ rendered ^ "\n"
+    let serializes_rendered = generate param_types Convert.of_serialize in
+    let deserializes_rendered = generate result_types Convert.of_deserialize in
+    render_convert_header ()
+    ^ serializes_rendered
+    ^ deserializes_rendered
+    ^ event
+    ^ String.trim interface
+    ^ "\n"
   in
   generate_file ~rendered ~destdir ~output_file:"convert.go"
 
 let main destdir =
+  render_api_versions destdir ;
   render_api_messages_and_errors destdir ;
   let enums = Json.all_enums objects in
   render_enums enums destdir ;
-  let objects, converts = objs_and_convert_functions objects in
-  render_converts converts destdir ;
+  render_converts destdir ;
+  let objects = Json.xenapi objects in
   List.iter
     (fun (name, obj) ->
       let header_rendered =
@@ -126,7 +157,7 @@ let main destdir =
     objects
 
 let _ =
-  let destdir = ref "." in
+  let destdir = ref "autogen" in
   Arg.parse
     [
       ( "--destdir"

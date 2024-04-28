@@ -1,4 +1,3 @@
-{{#record}}
 {{#serialize}}
 func serialize{{func_partial_type}}(context string, record {{type}}) (rpcStruct map[string]interface{}, err error) {
 	rpcStruct = map[string]interface{}{}
@@ -51,4 +50,3 @@ func deserialize{{func_partial_type}}(context string, input interface{}) (record
 }
 
 {{/deserialize}}
-{{/record}}

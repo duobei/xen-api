@@ -1,4 +1,3 @@
-{{#map}}
 {{#serialize}}
 func serialize{{func_partial_type}}(context string, goMap {{type}}) (xenMap map[string]interface{}, err error) {
 	xenMap = make(map[string]interface{})
@@ -42,4 +41,3 @@ func deserialize{{func_partial_type}}(context string, input interface{}) (goMap 
 }
 
 {{/deserialize}}
-{{/map}}

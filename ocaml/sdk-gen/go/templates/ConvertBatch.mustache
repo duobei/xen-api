@@ -1,4 +1,3 @@
-{{#batch}}
 {{#deserialize}}
 func deserialize{{func_partial_type}}(context string, input interface{}) (batch {{type}}, err error) {
 	rpcStruct, ok := input.(map[string]interface{})
@@ -19,4 +18,3 @@ func deserialize{{func_partial_type}}(context string, input interface{}) (batch 
 }
 
 {{/deserialize}}
-{{/batch}}
